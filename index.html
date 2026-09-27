@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#10161c" />
+    <title>Emberfall // Field Test 01</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <main id="app" aria-label="Emberfall playable slice">
+      <canvas id="game" aria-label="Emberfall game canvas"></canvas>
+
+      <section class="hud hud-top" aria-live="polite">
+        <div class="brand-lockup">
+          <span class="eyebrow">FIELD TEST // 01</span>
+          <strong>EMBERFALL</strong>
+        </div>
+        <div class="location-readout">
+          <span id="zone-name">Mosslight Meadow</span>
+          <span id="clock-readout">06:20</span>
+        </div>
+      </section>
+
+      <section class="hud status-cluster">
+        <div class="meter-card">
+          <div class="meter-label"><span>VITALS</span><b id="hp-text">100 / 100</b></div>
+          <div class="meter"><i id="hp-fill" class="hp-fill"></i></div>
+          <div class="meter-label meter-label-small"><span>FOCUS</span><b id="energy-text">100</b></div>
+          <div class="meter meter-small"><i id="energy-fill" class="energy-fill"></i></div>
+        </div>
+        <div class="resource-card" aria-label="Resources">
+          <div class="resource-line"><span class="resource-dot copper-dot"></span><span>COPPER</span><b id="copper-count">0</b></div>
+          <div class="resource-line"><span class="resource-dot crystal-dot"></span><span>GLOW</span><b id="crystal-count">0</b></div>
+          <div class="resource-line"><span class="resource-dot ember-dot"></span><span>EMBER</span><b id="ember-count">0</b></div>
+        </div>
+      </section>
+
+      <section id="objective-card" class="objective-card">
+        <div class="objective-kicker"><span class="pulse-dot"></span><span id="objective-kicker">CURRENT THREAD</span></div>
+        <strong id="objective-title">Wake the workshop</strong>
+        <p id="objective-copy">Mine 3 copper chunks near camp, then follow the lantern posts east.</p>
+        <div class="route-dots" aria-hidden="true"><i class="route-dot active"></i><i class="route-dot"></i><i class="route-dot"></i><i class="route-dot"></i></div>
+      </section>
+
+      <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
+      <div id="prompt" class="interaction-prompt"></div>
+
+      <section class="bottom-hud">
+        <div id="tool-slots" class="tool-slots" aria-label="Tool belt"></div>
+        <div class="control-strip">
+          <span><kbd>A</kbd><kbd>D</kbd> move</span>
+          <span><kbd>SPACE</kbd> jump</span>
+          <span><kbd>LMB</kbd> use</span>
+          <span><kbd>E</kbd> interact</span>
+          <span><kbd>ESC</kbd> pause</span>
+        </div>
+        <div id="checkpoint-readout" class="checkpoint-readout">NO BEDROLL</div>
+      </section>
+
+      <section id="intro-screen" class="screen-layer visible">
+        <div class="intro-shell">
+          <div class="intro-mark"><span>✦</span></div>
+          <p class="eyebrow">A PLAYABLE PIXELUSTRY SLICE</p>
+          <h1>Emberfall</h1>
+          <p class="intro-lede">The workshop went dark. Follow the old lantern line below the meadow, find the glowroot core, and make enough noise to wake the thing guarding the furnace.</p>
+          <div class="intro-beats">
+            <div><b>01</b><span>Mine copper</span><small>Turn the first ore into a real weapon.</small></div>
+            <div><b>02</b><span>Choose a mutation</span><small>Build the run around how you play.</small></div>
+            <div><b>03</b><span>Wake the Warden</span><small>Read the arena. Use the room.</small></div>
+          </div>
+          <button id="start-button" class="primary-button">Start the descent <span>→</span></button>
+          <p class="tiny-note">30-ish minutes · keyboard + mouse · no save required</p>
+        </div>
+      </section>
+
+      <section id="pause-screen" class="screen-layer hidden">
+        <div class="compact-panel">
+          <p class="eyebrow">FIELD TEST PAUSED</p>
+          <h2>Keep your light.</h2>
+          <p>Take a breath. Your checkpoint and resources are safe.</p>
+          <button id="resume-button" class="primary-button">Resume <span>→</span></button>
+          <p class="tiny-note">Press ESC any time to return here.</p>
+        </div>
+      </section>
+
+      <section id="upgrade-screen" class="screen-layer hidden">
+        <div class="upgrade-shell">
+          <p class="eyebrow">GLOWROOT CORE // STABLE</p>
+          <h2>Choose what the deep keeps.</h2>
+          <p class="upgrade-subtitle">One mutation. No wrong answer. The rest of the run changes around it.</p>
+          <div id="upgrade-options" class="upgrade-options"></div>
+        </div>
+      </section>
+
+      <section id="victory-screen" class="screen-layer hidden">
+        <div class="compact-panel victory-panel">
+          <div class="victory-rune">✦</div>
+          <p class="eyebrow">FIELD TEST COMPLETE</p>
+          <h2>The furnace is yours.</h2>
+          <p id="victory-copy">The Warden fell. The old machines are listening again.</p>
+          <div id="victory-stats" class="victory-stats"></div>
+          <button id="replay-button" class="primary-button">Run it again <span>↗</span></button>
+        </div>
+      </section>
+
+      <div id="mobile-controls" class="mobile-controls" aria-hidden="true">
+        <button data-action="left">←</button>
+        <button data-action="right">→</button>
+        <button data-action="jump">↑</button>
+        <button data-action="use">✦</button>
+        <button data-action="interact">E</button>
+      </div>
+    </main>
+    <script src="./src/game.js"></script>
+  </body>
+</html>
