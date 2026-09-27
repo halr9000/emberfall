@@ -12,6 +12,9 @@ let lastToolKey = "";
 
 const TILE = 32;
 const WORLD_WIDTH = 224 * TILE;
+const GROUND_LEVEL = 520;
+const RESOURCE_NODE_SIZE = 24;
+const RESOURCE_NODE_RAISE = 40;
 const GRAVITY = 1450;
 const TAU = Math.PI * 2;
 
@@ -124,7 +127,7 @@ function resetGame() {
 function generateWorld() {
   const random = seededRandom(state.seed);
   const platforms = [
-    { x: 0, y: 520, w: WORLD_WIDTH + TILE, h: 340, kind: "ground" },
+    { x: 0, y: GROUND_LEVEL, w: WORLD_WIDTH + TILE, h: 340, kind: "ground" },
     { x: 54 * TILE, y: 444, w: 10 * TILE, h: 22, kind: "ledge" },
     { x: 68 * TILE, y: 410, w: 9 * TILE, h: 22, kind: "ledge" },
     { x: 83 * TILE, y: 474, w: 8 * TILE, h: 22, kind: "ledge" },
@@ -139,12 +142,18 @@ function generateWorld() {
   ];
   state.world.platforms = platforms;
 
+  // Node height is relative to the walkable surface beneath it, not the canvas origin.
   const nodeDefs = [
-    ["copper", 15, 4, 3], ["copper", 20, 3, 3], ["copper", 29, 4, 3], ["copper", 38, 3, 3], ["copper", 48, 4, 3],
-    ["crystal", 68, 3, 4], ["crystal", 78, 4, 4], ["crystal", 88, 3, 4], ["crystal", 101, 3, 4], ["crystal", 111, 4, 4], ["crystal", 123, 3, 4], ["crystal", 132, 4, 4],
-    ["ember", 146, 4, 4], ["ember", 158, 3, 4], ["ember", 172, 4, 4], ["ember", 180, 3, 4], ["ember", 190, 4, 4], ["ember", 201, 3, 4]
+    ["copper", 15, RESOURCE_NODE_RAISE, 3], ["copper", 20, 0, 3], ["copper", 29, RESOURCE_NODE_RAISE, 3], ["copper", 38, 0, 3], ["copper", 48, RESOURCE_NODE_RAISE, 3],
+    ["crystal", 68, 0, 4], ["crystal", 78, RESOURCE_NODE_RAISE, 4], ["crystal", 88, 0, 4], ["crystal", 101, 0, 4], ["crystal", 111, RESOURCE_NODE_RAISE, 4], ["crystal", 123, 0, 4], ["crystal", 132, RESOURCE_NODE_RAISE, 4],
+    ["ember", 146, RESOURCE_NODE_RAISE, 4], ["ember", 158, 0, 4], ["ember", 172, RESOURCE_NODE_RAISE, 4], ["ember", 180, 0, 4], ["ember", 190, RESOURCE_NODE_RAISE, 4], ["ember", 201, 0, 4]
   ];
-  state.nodes = nodeDefs.map(([type, tileX, tileY, hp], index) => ({ id: `node-${index}`, type, x: tileX * TILE + 4 + Math.floor(random() * 8), y: tileY * TILE + 8, w: 24, h: 24, hp, maxHp: hp, alive: true, bob: random() * TAU }));
+  state.nodes = nodeDefs.map(([type, tileX, rise, hp], index) => {
+    const x = tileX * TILE + 4 + Math.floor(random() * 8);
+    const support = platforms.find((platform) => platform.kind !== "ground" && x + RESOURCE_NODE_SIZE > platform.x && x < platform.x + platform.w);
+    const surfaceY = support?.y ?? GROUND_LEVEL;
+    return { id: `node-${index}`, type, x, y: surfaceY - RESOURCE_NODE_SIZE - rise, w: RESOURCE_NODE_SIZE, h: RESOURCE_NODE_SIZE, hp, maxHp: hp, alive: true, bob: random() * TAU };
+  });
 
   const enemyDefs = [
     ["slime", 31, 470], ["moth", 43, 330], ["slime", 51, 470],
@@ -195,9 +204,14 @@ function announce(message) {
 
 function getObjective() {
   const { copper, crystal, ember } = state.resources;
-  if (!state.flags.workshop) return { kicker: "01 // WAKE THE WORKSHOP", title: "Feed the copper press", copy: `Mine ${Math.max(0, 3 - copper)} more copper chunk${3 - copper === 1 ? "" : "s"}, then find the workshop at the meadow's edge.`, step: 0 };
-  if (crystal < 3) return { kicker: "02 // FIND THE GLOWROOT", title: "Collect the deep signal", copy: `Find ${Math.max(0, 3 - crystal)} more glow crystal${3 - crystal === 1 ? "" : "s"} in the grotto. Ledges are safer than the dark floor.`, step: 1 };
-  if (!state.flags.forge) return { kicker: "03 // CROSS THE DARK", title: "Bring light to the forge", copy: `Gather ${Math.max(0, 2 - ember)} ember shard${2 - ember === 1 ? "" : "s"}, then use the forge in the Emberworks.`, step: 2 };
+  if (!state.flags.workshop) return {
+    kicker: "01 // WAKE THE WORKSHOP",
+    title: copper < 3 ? "Feed the copper press" : "Wake the copper press",
+    copy: copper < 3 ? `Mine ${3 - copper} more copper chunk${3 - copper === 1 ? "" : "s"} nearby. Press J or click to mine; jump for raised ore.` : "Press E at the red awning workshop at the meadow's edge.",
+    step: 0
+  };
+  if (crystal < 3) return { kicker: "02 // FIND THE GLOWROOT", title: "Collect the deep signal", copy: `Mine ${3 - crystal} more glow crystal${3 - crystal === 1 ? "" : "s"} in the grotto. Use the Rivet Sling on flying enemies.`, step: 1 };
+  if (!state.flags.forge) return { kicker: "03 // CROSS THE DARK", title: "Bring light to the forge", copy: `Mine ${2 - ember} ember shard${2 - ember === 1 ? "" : "s"}, then press E at the forge in the Emberworks.`, step: 2 };
   if (!state.flags.upgrade) return { kicker: "03 // GLOWROOT CORE", title: "Choose what the deep keeps", copy: "The core has three answers. Pick one before the Warden wakes.", step: 2 };
   if (!state.flags.wardenAwake) return { kicker: "04 // THE WARDEN GATE", title: "Wake the furnace guardian", copy: "Reach the violet gate at the far end of the Emberworks and press E.", step: 3 };
   const boss = state.enemies.find((enemy) => enemy.type === "warden" && enemy.alive);

@@ -4,6 +4,7 @@
   "private": true,
   "description": "A 30-minute playable vertical slice inspired by Pixelustry.",
   "scripts": {
-    "dev": "python3 -m http.server 4173"
+    "dev": "python3 -m http.server 4173",
+    "test": "node --test"
   }
 }

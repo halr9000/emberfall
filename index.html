@@ -51,7 +51,7 @@
         <div class="control-strip">
           <span><kbd>A</kbd><kbd>D</kbd> move</span>
           <span><kbd>SPACE</kbd> jump</span>
-          <span><kbd>LMB</kbd> use</span>
+          <span><kbd>J</kbd><kbd>LMB</kbd> mine / attack</span>
           <span><kbd>E</kbd> interact</span>
           <span><kbd>ESC</kbd> pause</span>
         </div>
@@ -70,7 +70,8 @@
             <div><b>03</b><span>Wake the Warden</span><small>Read the arena. Use the room.</small></div>
           </div>
           <button id="start-button" class="primary-button">Start the descent <span>→</span></button>
-          <p class="tiny-note">30-ish minutes · keyboard + mouse · no save required</p>
+          <p class="intro-controls">Move A/D or arrows · jump SPACE · mine / attack J or click · interact E</p>
+          <p class="tiny-note">30-ish minutes · no save required</p>
         </div>
       </section>
 
@@ -104,12 +105,12 @@
         </div>
       </section>
 
-      <div id="mobile-controls" class="mobile-controls" aria-hidden="true">
-        <button data-action="left">←</button>
-        <button data-action="right">→</button>
-        <button data-action="jump">↑</button>
-        <button data-action="use">✦</button>
-        <button data-action="interact">E</button>
+      <div id="mobile-controls" class="mobile-controls">
+        <button data-action="left" aria-label="Move left" title="Move left"><span aria-hidden="true">←</span><small>LEFT</small></button>
+        <button data-action="right" aria-label="Move right" title="Move right"><span aria-hidden="true">→</span><small>RIGHT</small></button>
+        <button data-action="jump" aria-label="Jump" title="Jump"><span aria-hidden="true">↑</span><small>JUMP</small></button>
+        <button data-action="use" aria-label="Mine or attack" title="Mine or attack"><span aria-hidden="true">✦</span><small>ATTACK</small></button>
+        <button data-action="interact" aria-label="Interact" title="Interact"><span aria-hidden="true">E</span><small>INTERACT</small></button>
       </div>
     </main>
     <script src="./src/game.js"></script>

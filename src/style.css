@@ -107,6 +107,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .primary-button { min-width: 205px; padding: 13px 16px; border: 1px solid #efc166; color: #1a1916; background: linear-gradient(135deg, #f0c56e, #d9924f); box-shadow: 0 8px 24px rgba(233,184,91,.16); font-size: 12px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: transform .15s ease, filter .15s ease; }
 .primary-button:hover { transform: translateY(-2px); filter: brightness(1.08); }
 .primary-button span { margin-left: 13px; font-size: 18px; vertical-align: -1px; }
+.intro-controls { max-width: 590px; margin: 16px 0 0; color: rgba(242,229,199,.72); font-size: 11px; line-height: 1.45; letter-spacing: .02em; }
 .tiny-note { margin: 15px 0 0; color: rgba(242,229,199,.4); font-size: 10px; letter-spacing: .06em; }
 .compact-panel { width: min(420px, 100%); padding: 32px; border: 1px solid rgba(234,198,126,.38); background: rgba(15,22,27,.94); box-shadow: var(--shadow); }
 .compact-panel h2, .upgrade-shell h2 { margin: 7px 0 9px; color: #f8e4b3; font-size: 32px; letter-spacing: -.035em; }
@@ -143,6 +144,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   .tool-slot { width: 54px; height: 54px; }
   .intro-shell { padding: 27px 23px 25px; }
   .intro-lede { font-size: 13px; }
+  .intro-controls { margin-top: 13px; font-size: 10px; }
   .intro-beats { gap: 6px; margin: 20px 0 22px; }
   .intro-beats > div { min-height: 84px; padding: 9px; }
   .intro-beats b { margin-bottom: 12px; }
@@ -154,6 +156,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   .upgrade-card strong { margin-top: 12px; font-size: 12px; }
   .upgrade-card p { font-size: 10px; }
   .mobile-controls { position: absolute; left: 14px; right: 14px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 8; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; pointer-events: auto; }
-  .mobile-controls button { height: 43px; border: 1px solid rgba(234,198,126,.33); color: #f4db9e; background: rgba(14,20,25,.68); font-size: 18px; font-weight: 800; }
-  .mobile-controls button:last-child { font-size: 12px; }
+  .mobile-controls button { height: 43px; display: grid; place-content: center; gap: 3px; border: 1px solid rgba(234,198,126,.33); color: #f4db9e; background: rgba(14,20,25,.78); font-size: 18px; font-weight: 800; }
+  .mobile-controls button > span { line-height: 1; }
+  .mobile-controls button > small { color: rgba(244,219,158,.78); font-size: 7px; font-weight: 900; letter-spacing: .06em; line-height: 1; }
 }
