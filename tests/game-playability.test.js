@@ -28,8 +28,9 @@ function createElement(dataset = {}) {
   };
 }
 
-function loadGame() {
+function loadGame(width = 1280) {
   const source = fs.readFileSync(path.join(__dirname, "..", "src", "game.js"), "utf8");
+  let now = 0;
   const selectors = new Map();
   const listeners = new Map();
   const elementFor = (selector) => {
@@ -48,7 +49,7 @@ function loadGame() {
     height: 0
   });
   const window = {
-    innerWidth: 1280,
+    innerWidth: width,
     innerHeight: 800,
     devicePixelRatio: 1,
     addEventListener: (name, handler) => listeners.set(name, handler)
@@ -66,7 +67,7 @@ function loadGame() {
   const sandbox = {
     document,
     window,
-    performance: { now: () => 0 },
+    performance: { now: () => now },
     Math: math,
     requestAnimationFrame: () => 0,
     setTimeout: () => 1,
@@ -81,8 +82,15 @@ function loadGame() {
     press: (code) => listeners.get("keydown")({ code, repeat: false, preventDefault: () => {} }),
     release: (code) => listeners.get("keyup")({ code }),
     pointerDown: () => canvas.dispatch("pointerdown", {}),
-    mobile: (action, type) => mobileButtons.find((button) => button.dataset.action === action).dispatch(type, { preventDefault: () => {} }),
-    step: (dt) => vm.runInContext(`update(${dt})`, sandbox)
+    mobile: (action, type, pointerId = 1) => {
+      const event = { pointerId, preventDefault: () => {} };
+      mobileButtons.find((button) => button.dataset.action === action).dispatch(type, event);
+      if (type === "pointerup" || type === "pointercancel") listeners.get(type)?.(event);
+    },
+    step: (dt) => {
+      now += dt * 1000;
+      vm.runInContext(`update(${dt})`, sandbox);
+    }
   };
 }
 
@@ -113,6 +121,35 @@ test("the player can walk, jump, and mine the first copper without taking damage
   game.release("KeyJ");
 
   assert.equal(copper.hp, 2, "a jump followed by a pickaxe hit should chip the first copper node");
+});
+
+test("the camera follows eastward movement on a phone-sized screen", () => {
+  const game = loadGame(390);
+  game.click("#start-button");
+
+  const state = game.state();
+  game.press("ArrowRight");
+  for (let frame = 0; frame < 90; frame += 1) game.step(0.035);
+  game.release("ArrowRight");
+
+  const playerScreenX = state.player.x - state.camera.x;
+  assert.ok(state.camera.x > 0, "the camera should scroll east as the player advances");
+  assert.ok(playerScreenX >= 0 && playerScreenX < 390, "the player should remain visible in the viewport");
+});
+
+test("D and the right arrow both move the player east", () => {
+  for (const code of ["KeyD", "ArrowRight"]) {
+    const game = loadGame();
+    game.click("#start-button");
+
+    const state = game.state();
+    const startingX = state.player.x;
+    game.press(code);
+    for (let frame = 0; frame < 8; frame += 1) game.step(0.035);
+    game.release(code);
+
+    assert.ok(state.player.x > startingX, `${code} should move east`);
+  }
 });
 
 test("Space jumps and E activates the camp bedroll", () => {
@@ -148,6 +185,34 @@ test("touch controls move the player, jump, and interact", () => {
   state.player.y = 470;
   game.mobile("interact", "pointerdown");
   assert.equal(state.flags.bedroll, true);
+});
+
+test("a quick tap on the right touch control moves the player east", () => {
+  const game = loadGame();
+  game.click("#start-button");
+
+  const state = game.state();
+  const startingX = state.player.x;
+  game.mobile("right", "pointerdown");
+  game.mobile("right", "pointerup");
+  for (let frame = 0; frame < 6; frame += 1) game.step(0.035);
+
+  assert.ok(state.player.x >= startingX + 20, "a brief touch should visibly advance the player east");
+});
+
+test("releasing another touch control does not stop held eastward movement", () => {
+  const game = loadGame();
+  game.click("#start-button");
+
+  const state = game.state();
+  const startingX = state.player.x;
+  game.mobile("right", "pointerdown", 1);
+  game.mobile("use", "pointerdown", 2);
+  game.mobile("use", "pointerup", 2);
+  for (let frame = 0; frame < 8; frame += 1) game.step(0.035);
+  game.mobile("right", "pointerup", 1);
+
+  assert.ok(state.player.x > startingX, "releasing attack should leave the right direction pressed");
 });
 
 test("mouse and touch attack controls can mine a reachable copper node", () => {

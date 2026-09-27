@@ -4,6 +4,9 @@ const app = document.querySelector("#app");
 
 let viewport = { width: window.innerWidth, height: window.innerHeight, dpr: Math.min(window.devicePixelRatio || 1, 2) };
 let keys = new Set();
+let mobileMovePresses = new Map();
+let mobileTapDirection = 0;
+let mobileTapRemaining = 0;
 let pointer = { x: 0, y: 0, down: false };
 let lastFrame = performance.now();
 let nextToastId = 1;
@@ -94,12 +97,18 @@ function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 function screenX(x) { return x - state.camera.x; }
 function screenY(y) { return y - state.camera.y; }
 function worldPoint(x, y) { return { x: screenX(x), y: screenY(y) }; }
+function cameraTargetX() {
+  return clamp(state.player.x + state.player.w / 2 - viewport.width * 0.42, 0, Math.max(0, WORLD_WIDTH - viewport.width));
+}
 
 function resetGame() {
   state.active = false;
   state.paused = false;
   state.upgradeOpen = false;
   state.victory = false;
+  mobileMovePresses.clear();
+  mobileTapDirection = 0;
+  mobileTapRemaining = 0;
   state.t = 0;
   state.seed = Math.floor(Math.random() * 9000) + 1000;
   state.camera = { x: 0, y: 0 };
@@ -177,6 +186,7 @@ function makeEnemy(type, x, y, id) {
 
 function startGame() {
   resetGame();
+  state.camera.x = cameraTargetX();
   state.active = true;
   hideLayer("intro-screen");
   toast("Your lamp is warm. The lantern line starts east.", "FIELD NOTE");
@@ -443,7 +453,7 @@ function respawn() {
   state.player.vy = 0;
   state.player.x = state.flags.bedroll ? 9 * TILE : 10 * TILE;
   state.player.y = 470;
-  state.camera.x = 0;
+  state.camera.x = cameraTargetX();
   toast(state.flags.bedroll ? "The bedroll did its job. The deep still waits." : "The lantern dragged you back to camp.", "WAKE UP", "warn");
 }
 
@@ -467,7 +477,11 @@ function update(dt) {
   player.invuln = Math.max(0, player.invuln - dt);
   player.energy = clamp(player.energy + dt * 10, 0, 100);
 
-  const moveInput = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0);
+  const keyboardMoveInput = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0);
+  const touchMoveInput = Array.from(mobileMovePresses.values()).reduce((sum, move) => sum + move.direction, 0);
+  const tapMoveInput = mobileTapRemaining > 0 ? mobileTapDirection : 0;
+  const moveInput = clamp(keyboardMoveInput + touchMoveInput || tapMoveInput, -1, 1);
+  mobileTapRemaining = Math.max(0, mobileTapRemaining - dt);
   const strideBonus = state.flags.upgrade === "stride" ? 1.18 : 1;
   const maxSpeed = 225 * strideBonus;
   player.vx = lerp(player.vx, moveInput * maxSpeed, Math.min(1, dt * 11));
@@ -475,6 +489,7 @@ function update(dt) {
   player.vy += GRAVITY * dt;
   const wasGrounded = player.grounded;
   moveAndCollide(player, dt);
+  state.camera.x = lerp(state.camera.x, cameraTargetX(), Math.min(1, dt * 8));
   player.coyote = player.grounded ? .1 : Math.max(0, player.coyote - dt);
   if (player.grounded && !wasGrounded) player.jumps = 0;
 
@@ -844,18 +859,33 @@ window.addEventListener("keydown", (event) => {
 });
 window.addEventListener("keyup", (event) => keys.delete(event.code));
 
+function releaseMobileMove(pointerId, cancelled = false) {
+  const move = mobileMovePresses.get(pointerId);
+  if (!move) return;
+  mobileMovePresses.delete(pointerId);
+  if (!cancelled && performance.now() - move.startedAt < 160) {
+    mobileTapDirection = move.direction;
+    mobileTapRemaining = 0.22;
+  }
+}
+
 canvas.addEventListener("pointermove", (event) => { const rect = canvas.getBoundingClientRect(); pointer.x = event.clientX - rect.left; pointer.y = event.clientY - rect.top; });
 canvas.addEventListener("pointerdown", (event) => { pointer.down = true; if (state.active) handleUse(); });
-window.addEventListener("pointerup", () => { pointer.down = false; });
+window.addEventListener("pointerup", (event) => { pointer.down = false; releaseMobileMove(event.pointerId); });
+window.addEventListener("pointercancel", (event) => releaseMobileMove(event.pointerId, true));
 
 document.querySelector("#start-button").addEventListener("click", startGame);
 document.querySelector("#resume-button").addEventListener("click", () => { state.paused = false; hideLayer("pause-screen"); });
 document.querySelector("#replay-button").addEventListener("click", () => { hideLayer("victory-screen"); startGame(); });
 document.querySelectorAll("#mobile-controls button").forEach((button) => {
   const action = button.dataset.action;
-  button.addEventListener("pointerdown", (event) => { event.preventDefault(); if (action === "left") keys.add("ArrowLeft"); if (action === "right") keys.add("ArrowRight"); if (action === "jump") handleJump(); if (action === "use") handleUse(); if (action === "interact") interact(); });
-  button.addEventListener("pointerup", () => { keys.delete("ArrowLeft"); keys.delete("ArrowRight"); });
-  button.addEventListener("pointercancel", () => { keys.delete("ArrowLeft"); keys.delete("ArrowRight"); });
+  button.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    if (action === "left" || action === "right") mobileMovePresses.set(event.pointerId, { direction: action === "left" ? -1 : 1, startedAt: performance.now() });
+    if (action === "jump") handleJump();
+    if (action === "use") handleUse();
+    if (action === "interact") interact();
+  });
 });
 
 resetGame();
